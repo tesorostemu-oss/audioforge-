@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AudioForge Pro Studio • Web App Independiente (Gemini 3.8 Flash)</title>
+  <meta name="description" content="Estación de Producción Musical e Ingeniería de Audio con IA Multimodal, Modificador de Audio, Mezclador de 4 Stems, Piano Roll y Exportador MIDI." />
+  
+  <!-- CDN de TailwindCSS para estilización inmediata -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://tailwindcss.com"></script>
+
+  <!-- Estilos base y fallback defensivo para evitar pantalla en blanco bajo cualquier circunstancia -->
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #07090e;
+      color: #f1f5f9;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    /* Slider estilizado vertical para faders analógicos */
+    input[type=range][orient=vertical] {
+      writing-mode: bt-lr;
+      -webkit-appearance: slider-vertical;
+      width: 12px;
+      height: 130px;
+      padding: 0 4px;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-[#07090e] text-slate-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- ================= TOP NAVIGATION & SECURE GEMINI API KEY BAR ================= -->
+  <header class="sticky top-0 z-50 bg-slate-950/95 border-b border-slate-800/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-col lg:flex-row items-center justify-between gap-3">
+      
+      <!-- Brand & Project Title -->
+      <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-cyan-500/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-black tracking-wider text-white">AUDIOFORGE</span>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-cyan-950 border border-cyan-800 text-cyan-400">PRO STUDIO</span>
+              <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-400 font-bold">100% Standalone</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">Web App Autónoma • Gemini 3.8 Flash Direct SDK</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs font-mono">
+          <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-cyan-300 font-bold">Tonalidad: Fa menor (4A)</span>
+          <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-white font-bold">124 BPM</span>
+        </div>
+      </div>
+
+      <!-- Secure Dynamic Gemini API Key Input -->
+      <div class="flex items-center gap-2 w-full lg:w-auto justify-end bg-slate-900/90 p-1.5 rounded-xl border border-cyan-900/60 shadow-inner">
+        <div class="flex items-center gap-1.5 text-xs text-slate-300 pl-2">
+          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <span class="font-semibold text-[11px] whitespace-nowrap hidden sm:inline">Google Gemini API Key:</span>
+        </div>
+
+        <div class="relative flex-1 sm:w-64">
+          <input
+            id="apiKeyInput"
+            type="password"
+            placeholder="Pega tu Gemini API Key aquí..."
+            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-lg px-2.5 py-1 text-xs text-cyan-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 font-mono"
+          />
+          <button
+            id="toggleApiKeyBtn"
+            type="button"
+            class="absolute right-2 top-1.5 text-slate-400 hover:text-cyan-300 text-[10px] font-mono cursor-pointer"
+            title="Mostrar / Ocultar API Key"
+          >👁</button>
+        </div>
+
+        <button
+          id="saveApiKeyBtn"
+          type="button"
+          class="px-3 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs transition-colors whitespace-nowrap cursor-pointer shadow-sm shadow-cyan-500/30"
+        >Guardar Key</button>
+
+        <span id="apiStatusBadge" class="w-2.5 h-2.5 rounded-full bg-amber-400 mr-1" title="API Key no configurada"></span>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKSTATION ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Top Status Banner -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
+      <div>
+        <h1 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+          AudioForge Pro Studio • Estación de Trabajo Autónoma
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">
+          Procesamiento acústico en navegador, separación de stems en tiempo real, modificador de audio físico y exportador MIDI estándar.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="loadDemoBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer">
+          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+          Cargar Demo (Neon Horizon)
+        </button>
+      </div>
+    </div>
+
+    <!-- AUDIO PLAYER & STEM MIXER ROW -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Audio Upload & Interactive Audio Modifier (BPM / Pitch) -->
+      <div class="lg:col-span-5 space-y-4">
+        
+        <!-- Audio File Dropzone -->
+        <div class="border-2 border-dashed border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 bg-slate-950/40 text-center transition-colors relative">
+          <input type="file" id="audioFileInput" accept="audio/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+          <div class="flex flex-col items-center gap-2 pointer-events-none">
+            <div class="p-3 rounded-full bg-cyan-950/60 border border-cyan-800/80 text-cyan-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            </div>
+            <div>
+              <h3 class="text-xs font-bold text-slate-200">Arrastra o sube tu archivo de audio</h3>
+              <p class="text-[11px] text-slate-500">WAV, MP3, OGG, FLAC</p>
+            </div>
+            <div id="loadedTrackBadge" class="mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs font-mono text-cyan-300">
+              <span>Neon Horizon - Peak Melodic Reference.wav</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODIFICADOR INTERACTIVO DE AUDIO (FÍSICO) -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-xl">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">MODIFICADOR INTERACTIVO DE AUDIO (FÍSICO)</h3>
+            </div>
+            <span class="text-[9px] font-mono bg-amber-950/70 border border-amber-800 text-amber-300 px-2 py-0.5 rounded">Phase Vocoder DSP</span>
+          </div>
+
+          <!-- BPM Slider -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-400">Cambiar Tempo (BPM):</span>
+              <span id="bpmDisplay" class="font-mono font-bold text-cyan-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">124 BPM</span>
+            </div>
+            <input id="warpBpmSlider" type="range" min="100" max="140" value="124" class="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-cyan-400 border border-slate-800" />
+          </div>
+
+          <!-- Pitch Slider -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-400">Alterar Tono (Pitch):</span>
+              <span id="pitchDisplay" class="font-mono font-bold text-amber-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">0 st (Fa menor)</span>
+            </div>
+            <input id="warpPitchSlider" type="range" min="-6" max="6" value="0" class="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-amber-400 border border-slate-800" />
+          </div>
+
+          <!-- Process / Sync Button -->
+          <button id="applyWarpBtn" type="button" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-cyan-500 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>Procesar y Sincronizar Audio</span>
+          </button>
+          
+          <div id="warpFeedback" class="hidden p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-800 text-xs text-emerald-200 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span id="warpFeedbackText" class="text-[11px] font-bold">Audio modificado correctamente.</span>
+              <button id="downloadWarpWavBtn" type="button" class="px-2.5 py-1 rounded bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-[10px] cursor-pointer">Descargar WAV</button>
+            </div>
+            <div id="warpAiInsight" class="text-[10px] text-emerald-300 font-mono italic"></div>
+          </div>
+        </div>
+
+        <!-- Master AI Analysis Button (Gemini 3.8 Flash) -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <button id="runAiAnalysisBtn" type="button" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer transition-all">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+            <span>Ejecutar Análisis Multimodal (Gemini 3.8 Flash)</span>
+          </button>
+          <div id="aiAnalysisOutput" class="text-[11px] text-slate-300 font-mono bg-slate-950/80 p-3 rounded-xl border border-slate-800 hidden leading-relaxed space-y-1.5"></div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Real-time Canvas Spectrum Visualizer & STEM MIXER -->
+      <div class="lg:col-span-7 space-y-4">
+        
+        <!-- Canvas Visualizer & Transport Player -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+              <span class="text-xs font-bold uppercase tracking-wider text-white">Visualizador Espectral en Tiempo Real</span>
+            </div>
+            <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800">FFT 256 • 60 FPS</span>
+          </div>
+
+          <!-- Canvas -->
+          <canvas id="spectrumCanvas" width="600" height="140" class="w-full h-32 bg-slate-950 rounded-xl border border-slate-800"></canvas>
+
+          <!-- Master Transport Controls -->
+          <div class="flex items-center justify-between gap-3 pt-1">
+            <div class="flex items-center gap-2">
+              <button id="masterPlayBtn" type="button" class="w-9 h-9 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold flex items-center justify-center cursor-pointer shadow-md shadow-cyan-500/30">
+                ▶
+              </button>
+              <button id="masterStopBtn" type="button" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center cursor-pointer">
+                ■
+              </button>
+              <span id="timeDisplay" class="font-mono text-xs text-cyan-300 font-bold ml-1">0:00 / 0:08</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-slate-400 font-mono">Volumen Maestro:</span>
+              <input id="masterVolume" type="range" min="0" max="100" value="85" class="w-24 accent-cyan-400 cursor-pointer" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= MEZCLADOR DE STEMS (SEPARACIÓN DE PISTAS) ================= -->
+        <div class="bg-slate-900/95 border border-cyan-800/80 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4 relative overflow-hidden">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-white">MEZCLADOR DE STEMS (SEPARACIÓN DE PISTAS)</h3>
+                  <span class="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-700/80 text-cyan-300">Spleeter & Demucs DSP</span>
+                </div>
+                <p class="text-[11px] text-slate-400">Control de 4 canales: Voz, Batería, Bajo y Melodía con faders analógicos, Mute y Solo.</p>
+              </div>
+            </div>
+
+            <!-- Botón Extraer Stems con IA -->
+            <button id="extractStemsBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-rose-500 via-amber-500 to-cyan-400 hover:brightness-110 text-slate-950 shadow-lg shadow-rose-500/20 cursor-pointer flex items-center gap-2 transition-all">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5z"/></svg>
+              <span>Extraer Stems con IA</span>
+            </button>
+          </div>
+
+          <!-- Stems Status Message -->
+          <div id="stemsStatusMsg" class="hidden p-2.5 rounded-xl bg-cyan-950/80 border border-cyan-800 text-[11px] text-cyan-200"></div>
+
+          <!-- 4 Vertical Mixing Channels (Faders) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+
+            <!-- Channel 1: Voz (Vocals) -->
+            <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-950/90 flex flex-col items-center justify-between space-y-3">
+              <div class="text-center">
+                <span class="text-xs font-bold text-rose-400 block">🎤 Voz (Vocals)</span>
+                <span class="text-[9px] font-mono text-slate-400">Acapella / Formantes</span>
+              </div>
+              <div class="flex items-center justify-center gap-2 h-32 py-1">
+                <div class="w-2 h-28 bg-slate-900 rounded-full overflow-hidden flex flex-col justify-end">
+                  <div id="meter-vocals" class="w-full bg-rose-500 rounded-full transition-all duration-75" style="height: 0%"></div>
+                </div>
+                <input id="fader-vocals" type="range" min="0" max="100" value="85" orient="vertical" class="cursor-pointer accent-rose-400" />
+              </div>
+              <span id="val-vocals" class="text-[10px] font-mono text-slate-300 bg-slate-900 px-2 py-0.5 rounded">85% (0dB)</span>
+              <div class="grid grid-cols-2 gap-1.5 w-full pt-1 border-t border-slate-800">
+                <button id="mute-vocals" type="button" class="py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white cursor-pointer">MUTE</button>
+                <button id="solo-vocals" type="button" class="py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white cursor-pointer">SOLO</button>
+              </div>
+              <button id="btn-dl-vocals" type="button" class="w-full py-1 text-[9px] font-mono text-rose-300 bg-slate-900 hover:bg-slate-800 rounded border border-slate-800 cursor-pointer">Descargar WAV</button>
+            </div>
+
+            <!-- Channel 2: Batería (Drums) -->
+            <div class="p-3.5 rounded-xl border border-slate-800 bg-slate-950/90 flex flex-col items-center justify-between space-y-3">
+              <div class="text-center">
+                <span class="text-xs font-bold text-amber-400 block">🥁 Batería (Drums)</span>
+                <span class="text-[9px] font-mono text-slate-400">Kick, Clap & Hats</span>
+              </div>
+              <div class="flex items-center justify-center gap-2 h-32 py-1">
+                <div class="w-2 h-28 bg-slate-900 rounded-full overflow-hidden flex flex-col justify-end">
+                  <div id="meter-drums" class="w-full bg-amber-400 rounded-full transition-all duration-75" style="height: 0%"></div>
+                </div>
+                <input id="fader-drums" type="range" min="0" max="100" value="85" orient="vertical" class="cursor-pointer accent-amber-400" />
+              </div>
+              <span id="val-drums" class="text-[10px] font-mono text-slate-300 bg-slate-900 px-2 py-0.5 rounded">85% (0dB)</span>
+              <div class="grid grid-cols-2 gap-1.5 w-full pt-1 border-t border-slate-800">
+                <button id="mute-drums" type="button" class="py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-900 border border-slate-800 text-slate-400 hover:text-white cursor-pointer">MUTE</button>
+                <button id="solo-drums" type="button" class="py-1 px-1.5 rounded-lg text-[10
